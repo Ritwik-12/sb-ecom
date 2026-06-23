@@ -8,11 +8,13 @@ import com.ecommerce.project.exception.ResourceNotFoundException;
 import com.ecommerce.project.model.Category;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+
 
 @Service
 @Slf4j
@@ -30,9 +32,16 @@ public class CategoryServiceImpl implements CategoryService {
 
 
     @Override
-    public CategoryResponse getAllCategories() {
+    public CategoryResponse getAllCategories(Integer pageNumber, Integer pageSize,String sortBy,String sortOrder) {
 
-        List<Category> categories= categoryRepository.findAll();
+        Sort sortByAndOrder=sortOrder.equalsIgnoreCase("asc")?
+                Sort.by(sortBy).ascending()
+                :Sort.by(sortBy).descending();
+
+        Pageable pageDetails=PageRequest.of(pageNumber,pageSize,sortByAndOrder);
+        Page<Category> categoryPage=categoryRepository.findAll(pageDetails);
+
+        List<Category> categories= categoryPage.getContent();
         if(categories.isEmpty()){
             throw new ApiException("No category created till now !!!");
         }
@@ -43,6 +52,12 @@ public class CategoryServiceImpl implements CategoryService {
 
             CategoryResponse categoryResponse=new CategoryResponse();
             categoryResponse.setContent(categoryDtos);
+            categoryResponse.setPageNumber(categoryPage.getNumber());
+            categoryResponse.setPageSize(categoryPage.getSize());
+            categoryResponse.setTotalElements(categoryPage.getTotalElements());
+            categoryResponse.setTotalPages(categoryPage.getTotalPages());
+            categoryResponse.setLastPage(categoryPage.isLast());
+
             return categoryResponse;
     }
 

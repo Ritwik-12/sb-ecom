@@ -3,6 +3,7 @@ package com.ecommerce.project.controller;
 
 import com.ecommerce.project.Payload.CategoryDto;
 import com.ecommerce.project.Payload.CategoryResponse;
+import com.ecommerce.project.config.AppConstants;
 import com.ecommerce.project.service.CategoryService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -22,8 +23,13 @@ public class CategoryController {
     }
 
     @GetMapping("/public/catagory")
-    public ResponseEntity<CategoryResponse> getAllCategories(){
-         CategoryResponse allCategories=categoryService.getAllCategories();
+    public ResponseEntity<CategoryResponse> getAllCategories(
+            @RequestParam(name="pageNumber", defaultValue = AppConstants.PAGE_NUMBER,required=false) Integer pageNumber,
+            @RequestParam(name="pageSize",defaultValue = AppConstants.PAGE_SIZE,required = false) Integer pageSize,
+            @RequestParam(name="sortBy",defaultValue=AppConstants.SORT_CATEGORIES_BY,required=false) String sortBy,
+            @RequestParam(name="sortOrder",defaultValue=AppConstants.SORT_DIRECTION,required=false) String sortOrder
+    ){
+         CategoryResponse allCategories=categoryService.getAllCategories(pageNumber,pageSize,sortBy,sortOrder);
          return new ResponseEntity<>(allCategories,HttpStatus.OK);
     }
 
