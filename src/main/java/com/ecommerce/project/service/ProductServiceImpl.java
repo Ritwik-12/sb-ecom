@@ -69,6 +69,37 @@ public class ProductServiceImpl implements ProductService{
         productResponse.setContent(allProduct);
         return productResponse;
 
+    }
 
+    @Override
+    public ProductResponse searchProductByCategory(String keyword) {
+        List<Product> products=productRepository.findByProductNameLikeIgnoreCase("%"+ keyword+ "%");
+
+        List<ProductDTO> allProduct=products.stream()
+                .map((p)->modelMapper.map(p,ProductDTO.class))
+                .toList();
+        ProductResponse productResponse=new ProductResponse();
+        productResponse.setContent(allProduct);
+        return productResponse;
+    }
+
+    @Override
+    public ProductDTO updateProduct(Long productId,ProductDTO productDTO) {
+       Product product=productRepository.findById(productId)
+               .orElseThrow(()->new ResourceNotFoundException("product","productId",productId));
+
+       Product product1= modelMapper.map(productDTO,Product.class);
+       product1.setProductId(productId);
+       product=productRepository.save(product1);
+       return modelMapper.map(product,ProductDTO.class);
+    }
+
+    @Override
+    public ProductDTO deleteProduct(Long productId) {
+        Product product=productRepository.findById(productId)
+                .orElseThrow(()->new ResourceNotFoundException("product","productId",productId));
+
+        productRepository.deleteById(productId);
+        return modelMapper.map(product,ProductDTO.class);
     }
 }
