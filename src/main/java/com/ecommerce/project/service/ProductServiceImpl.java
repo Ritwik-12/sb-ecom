@@ -13,6 +13,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -68,8 +72,18 @@ public class ProductServiceImpl implements ProductService{
     }
 
     @Override
-    public ProductResponse getAllProducts() {
-       List<Product> products= productRepository.findAll();
+    public ProductResponse getAllProducts(Integer pageNumber,Integer pageSize,String sortBy,String sortOrder) {
+
+        Sort sortByAndOrder=sortOrder.equalsIgnoreCase("asc")?
+                Sort.by(sortBy).ascending()
+                :Sort.by(sortBy).descending();
+
+        Pageable pageDetails= PageRequest.of(pageNumber,pageSize,sortByAndOrder);
+
+        Page<Product> productPage=productRepository.findAll(pageDetails);
+
+        List<Product> products=productPage.getContent();
+
        if(products.isEmpty()){
            throw new ApiException("No product created yet!!!");
        }
@@ -78,16 +92,31 @@ public class ProductServiceImpl implements ProductService{
                  .toList();
          ProductResponse productResponse=new ProductResponse();
          productResponse.setContent(allProduct);
+         productResponse.setPageNumber(productPage.getNumber());
+         productResponse.setPageSize(productPage.getSize());
+         productResponse.setTotalElements(productPage.getTotalElements());
+         productResponse.setTotalPages(productPage.getTotalPages());
+         productResponse.setLastPage(productPage.isLast());
+
          return productResponse;
     }
 
     @Override
-    public ProductResponse searchProductByCategory(Long categoryId) {
+    public ProductResponse searchProductByCategory(Long categoryId,Integer pageNumber,Integer pageSize,String sortBy,String sortOrder) {
+
+        Sort sortByAndOrder =sortOrder.equalsIgnoreCase("asc")?
+                Sort.by(sortBy).ascending()
+                :Sort.by(sortBy).descending();
+
+        Pageable pageDetails=PageRequest.of(pageNumber,pageSize,sortByAndOrder);
+
         Category category=categoryRepository.findById(categoryId)
                 .orElseThrow(()->new ResourceNotFoundException("category","categoryId",categoryId));
         String categoryName=category.getCategoryName();
 
-        List<Product> productsByCategory=productRepository.findByCategoryOrderByPriceAsc(category);
+        Page<Product> productPage=productRepository.findByCategoryOrderByPriceAsc(category,pageDetails);
+
+        List<Product> productsByCategory=productPage.getContent();
 
         if(productsByCategory.isEmpty()){
             throw new ApiException("No product created yet!!!");
@@ -98,13 +127,27 @@ public class ProductServiceImpl implements ProductService{
                 .toList();
         ProductResponse productResponse=new ProductResponse();
         productResponse.setContent(allProduct);
+        productResponse.setPageNumber(productPage.getNumber());
+        productResponse.setPageSize(productPage.getSize());
+        productResponse.setTotalElements(productPage.getTotalElements());
+        productResponse.setTotalPages(productPage.getTotalPages());
+        productResponse.setLastPage(productPage.isLast());
         return productResponse;
 
     }
 
     @Override
-    public ProductResponse searchProductByKeyword(String keyword) {
-        List<Product> products=productRepository.findByProductNameLikeIgnoreCase("%"+ keyword+ "%");
+    public ProductResponse searchProductByKeyword(String keyword,Integer pageNumber,Integer pageSize,String sortBy,String sortOrder) {
+
+
+        Sort sortByAndOrder=sortOrder.equalsIgnoreCase("asc")?
+                Sort.by(sortBy).ascending()
+                :Sort.by(sortBy).descending();
+        Pageable pageDetails=PageRequest.of(pageNumber,pageSize,sortByAndOrder);
+
+        Page<Product> productPage=productRepository.findByProductNameLikeIgnoreCase("%"+ keyword+ "%",pageDetails);
+
+        List<Product> products=productPage.getContent();
 
         if(products.isEmpty()){
             throw new ApiException("No product created yet!!!");
@@ -114,6 +157,11 @@ public class ProductServiceImpl implements ProductService{
                 .toList();
         ProductResponse productResponse=new ProductResponse();
         productResponse.setContent(allProduct);
+        productResponse.setPageNumber(productPage.getNumber());
+        productResponse.setPageSize(productPage.getSize());
+        productResponse.setTotalElements(productPage.getTotalElements());
+        productResponse.setTotalPages(productPage.getTotalPages());
+        productResponse.setLastPage(productPage.isLast());
         return productResponse;
     }
 
