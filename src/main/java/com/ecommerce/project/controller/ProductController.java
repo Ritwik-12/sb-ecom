@@ -4,6 +4,7 @@ import com.ecommerce.project.Payload.ProductDTO;
 import com.ecommerce.project.Payload.ProductResponse;
 import com.ecommerce.project.Repositories.ProductRepository;
 import com.ecommerce.project.service.ProductService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +21,6 @@ public class ProductController {
 
 
     private final ProductService productService;
-    private final ProductRepository productRepository;
 
 
     @GetMapping("/public/products")
@@ -31,7 +31,7 @@ public class ProductController {
 
 
     @PostMapping("/admin/categories/{categoryId}/product")
-    public ResponseEntity<ProductDTO> addProduct(@RequestBody ProductDTO productDTO,
+    public ResponseEntity<ProductDTO> addProduct(@Valid @RequestBody ProductDTO productDTO,
                                                  @PathVariable Long categoryId){
 
 
@@ -50,13 +50,13 @@ public class ProductController {
     }
 
     @GetMapping("/public/products/keyword/{keyword}")
-    public ResponseEntity<ProductResponse> getProductByKeyword(@PathVariable String keyword){
-       ProductResponse productResponse= productService.searchProductByCategory(keyword);
+    public ResponseEntity<ProductResponse> searchProductByKeyword(@PathVariable String keyword){
+       ProductResponse productResponse= productService.searchProductByKeyword(keyword);
        return new ResponseEntity<>(productResponse,HttpStatus.FOUND);
     }
 
     @PutMapping("/admin/product/{productId}")
-    public ResponseEntity<ProductDTO> updateProduct(@PathVariable Long productId,@RequestBody ProductDTO productDTO){
+    public ResponseEntity<ProductDTO> updateProduct(@Valid @PathVariable Long productId, @RequestBody ProductDTO productDTO){
       ProductDTO updatedProduct= productService.updateProduct(productId,productDTO);
       return new ResponseEntity<>(updatedProduct,HttpStatus.OK);
     }
