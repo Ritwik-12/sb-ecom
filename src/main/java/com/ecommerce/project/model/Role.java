@@ -1,6 +1,7 @@
 package com.ecommerce.project.model;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -20,6 +21,7 @@ public class Role {
     @Column(name="role_id")
     private Long roleId;
 
+    @JsonIgnore
     @Column(length=20,name="role_name")
     @Enumerated(EnumType.STRING)
     private AppRole roleName;
