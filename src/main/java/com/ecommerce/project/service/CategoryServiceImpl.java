@@ -34,6 +34,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public CategoryResponse getAllCategories(Integer pageNumber, Integer pageSize,String sortBy,String sortOrder) {
 
+        System.out.println("control is now here");
         Sort sortByAndOrder=sortOrder.equalsIgnoreCase("asc")?
                 Sort.by(sortBy).ascending()
                 :Sort.by(sortBy).descending();

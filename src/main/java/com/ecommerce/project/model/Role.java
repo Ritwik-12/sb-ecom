@@ -25,4 +25,8 @@ public class Role {
     @Column(length=20,name="role_name")
     @Enumerated(EnumType.STRING)
     private AppRole roleName;
+
+    public Role(AppRole roleName){
+        this.roleName=roleName;
+    }
 }

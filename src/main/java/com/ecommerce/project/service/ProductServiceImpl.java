@@ -74,6 +74,7 @@ public class ProductServiceImpl implements ProductService{
     @Override
     public ProductResponse getAllProducts(Integer pageNumber,Integer pageSize,String sortBy,String sortOrder) {
 
+
         Sort sortByAndOrder=sortOrder.equalsIgnoreCase("asc")?
                 Sort.by(sortBy).ascending()
                 :Sort.by(sortBy).descending();

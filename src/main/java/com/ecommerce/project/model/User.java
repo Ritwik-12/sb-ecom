@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -48,6 +49,7 @@ public class User {
     @Column(name="password")
     private String password;
 
+
     @ManyToMany(cascade={CascadeType.MERGE,CascadeType.PERSIST},
     fetch = FetchType.EAGER)
     @JoinTable(name="user_role",
@@ -71,4 +73,11 @@ public class User {
         inverseJoinColumns = @JoinColumn(name="address_id")
     )
     private List<Address> addresses=new ArrayList<>();
+
+
+    public User(String userName,String email,String password){
+        this.userName=userName;
+        this.email=email;
+        this.password=password;
+    }
 }

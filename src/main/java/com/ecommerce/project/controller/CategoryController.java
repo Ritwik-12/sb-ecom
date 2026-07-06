@@ -29,6 +29,7 @@ public class CategoryController {
             @RequestParam(name="sortBy",defaultValue=AppConstants.SORT_CATEGORIES_BY,required=false) String sortBy,
             @RequestParam(name="sortOrder",defaultValue=AppConstants.SORT_DIRECTION,required=false) String sortOrder
     ){
+        System.out.println("control is here");
          CategoryResponse allCategories=categoryService.getAllCategories(pageNumber,pageSize,sortBy,sortOrder);
          return new ResponseEntity<>(allCategories,HttpStatus.OK);
     }
