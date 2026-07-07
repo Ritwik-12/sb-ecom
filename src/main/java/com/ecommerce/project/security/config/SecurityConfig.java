@@ -92,13 +92,10 @@ public class SecurityConfig {
                 );
 
         http.authenticationProvider(authenticationProvider());
-        System.out.println("going  inside the filter chaing");
         http.addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
-        System.out.println("outside the filter chain");
         http.headers(headers -> headers.frameOptions(
                 frameOptions -> frameOptions.sameOrigin()));
 
-        System.out.println("finally here !!");
         return http.build();
     }
 

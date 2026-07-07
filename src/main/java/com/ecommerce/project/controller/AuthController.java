@@ -26,7 +26,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -52,8 +51,6 @@ public class AuthController {
 
     @Autowired
     private PasswordEncoder encoder;
-
-
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/admin")
@@ -96,6 +93,8 @@ public class AuthController {
                 jwtCookie.toString())
                 .body(response);
     }
+
+
 
 
     @PostMapping("/signup")
@@ -145,7 +144,8 @@ public class AuthController {
         user.setRoles(roles);
         userRepository.save(user);
 
-        return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+
+        return ResponseEntity.ok(new MessageResponse("user created successfully!"));
     }
 
 
