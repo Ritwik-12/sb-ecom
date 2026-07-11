@@ -6,6 +6,7 @@ import com.ecommerce.project.Payload.CategoryResponse;
 import com.ecommerce.project.config.AppConstants;
 import com.ecommerce.project.service.CategoryService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,12 +16,11 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api")
 @Slf4j
+@RequiredArgsConstructor
 public class CategoryController {
+
     private final CategoryService categoryService;
 
-    public CategoryController(CategoryService categoryService){
-       this.categoryService=categoryService;
-    }
 
     @GetMapping("/public/catagory")
     public ResponseEntity<CategoryResponse> getAllCategories(
@@ -35,8 +35,9 @@ public class CategoryController {
     }
 
     //@RequestMapping(value="/api/public/category", method=RequestMethod.GET)
-    @PostMapping("/public/catagory")
+    @PostMapping("/admin/catagory")
     public ResponseEntity<CategoryDto> createNewCategory(@Valid @RequestBody CategoryDto categoryDto){
+        System.out.println("new category creation");
         CategoryDto category=categoryService.createNewCategory(categoryDto);
         return new ResponseEntity<>(category,HttpStatus.CREATED);
     }

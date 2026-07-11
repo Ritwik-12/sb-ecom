@@ -2,9 +2,9 @@ package com.ecommerce.project.service;
 
 import com.ecommerce.project.Payload.CategoryDto;
 import com.ecommerce.project.Payload.CategoryResponse;
-import com.ecommerce.project.model.Category;
 
-import java.util.List;
+import org.springframework.stereotype.Service;
+
 
 public interface CategoryService {
 

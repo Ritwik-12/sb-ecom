@@ -63,13 +63,14 @@ public class AuthController {
 
         Authentication authentication;
         try{
-
             authentication=authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             loginRequest.getUserName(),
                             loginRequest.getPassword()
                     )
             );
+            System.out.println(authentication.getName());
+            System.out.println(authentication.getPrincipal());
 
         }catch(AuthenticationException exception){
             Map<String,Object> map=new HashMap<>();
@@ -99,6 +100,7 @@ public class AuthController {
 
     @PostMapping("/signup")
     public ResponseEntity<?> registerUser(@Valid @RequestBody SignUpRequest signUpRequest){
+
 
         if(userRepository.existsByUserName(signUpRequest.getUsername())){
            return  ResponseEntity.badRequest().body(new MessageResponse("Error:Username is already taken!"));
