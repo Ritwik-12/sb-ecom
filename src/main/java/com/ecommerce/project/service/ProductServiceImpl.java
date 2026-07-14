@@ -1,12 +1,15 @@
 package com.ecommerce.project.service;
 
+import com.ecommerce.project.Payload.CartDTO;
 import com.ecommerce.project.Payload.CategoryDto;
 import com.ecommerce.project.Payload.ProductDTO;
 import com.ecommerce.project.Payload.ProductResponse;
+import com.ecommerce.project.Repositories.CartRepository;
 import com.ecommerce.project.Repositories.CategoryRepository;
 import com.ecommerce.project.Repositories.ProductRepository;
 import com.ecommerce.project.exception.ApiException;
 import com.ecommerce.project.exception.ResourceNotFoundException;
+import com.ecommerce.project.model.Cart;
 import com.ecommerce.project.model.Category;
 import com.ecommerce.project.model.Product;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +39,8 @@ public class ProductServiceImpl implements ProductService{
     private final CategoryRepository categoryRepository;
     private final ModelMapper modelMapper;
     private final FileService fileService;
+    private final CartRepository cartRepository;
+    private final CartService  cartService;
 
     @Value("${project.image}")
     private String path;
@@ -172,15 +177,39 @@ public class ProductServiceImpl implements ProductService{
                .orElseThrow(()->new ResourceNotFoundException("product","productId",productId));
 
        Product product1= modelMapper.map(productDTO,Product.class);
+
        product1.setProductId(productId);
-       product=productRepository.save(product1);
-       return modelMapper.map(product,ProductDTO.class);
+       product.setProductName(product1.getProductName());
+       product.setDescription(product1.getDescription());
+       product.setQuantity(product1.getQuantity());
+       product.setDiscount(product1.getDiscount());
+       product.setPrice(product1.getSpecialPrice());
+       product.setSpecialPrice(product1.getSpecialPrice());
+
+       Product savedProduct=productRepository.save(product);
+
+       List<Cart> carts=cartRepository.findCartByProductId(productId);
+       List<CartDTO> cartDTOS=carts.stream().map(cart->{
+           CartDTO cartDTO=modelMapper.map(cart,CartDTO.class);
+           List<ProductDTO> productDTOS=cart.getItems().stream().map(p->
+                   modelMapper.map(p,ProductDTO.class))
+                   .toList();
+           cartDTO.setProducts(productDTOS);
+           return cartDTO;
+       }).toList();
+
+       cartDTOS.forEach(cart->cartService.updateProductInCart(cart.getCartId(),productId));
+
+       return modelMapper.map(savedProduct,ProductDTO.class);
     }
 
     @Override
     public ProductDTO deleteProduct(Long productId) {
         Product product=productRepository.findById(productId)
                 .orElseThrow(()->new ResourceNotFoundException("product","productId",productId));
+
+        List<Cart> carts=cartRepository.findCartByProductId(productId);
+        carts.forEach(cart->cartService.deleteProductFromCart(cart.getId(),productId ));
 
         productRepository.deleteById(productId);
         return modelMapper.map(product,ProductDTO.class);

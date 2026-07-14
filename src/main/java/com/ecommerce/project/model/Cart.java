@@ -19,7 +19,7 @@ public class Cart {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long Id;
 
-    @OneToMany(mappedBy="cart" ,cascade ={CascadeType.PERSIST,CascadeType.MERGE,CascadeType.REMOVE},
+    @OneToMany(mappedBy="cart" ,cascade =CascadeType.ALL,
             orphanRemoval = true,
             fetch = FetchType.EAGER)
     private List<CartItem> items=new ArrayList<>();
