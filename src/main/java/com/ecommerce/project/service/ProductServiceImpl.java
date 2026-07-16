@@ -179,14 +179,14 @@ public class ProductServiceImpl implements ProductService{
        Product product1= modelMapper.map(productDTO,Product.class);
 
        product1.setProductId(productId);
-       product.setProductName(product1.getProductName());
-       product.setDescription(product1.getDescription());
-       product.setQuantity(product1.getQuantity());
-       product.setDiscount(product1.getDiscount());
-       product.setPrice(product1.getSpecialPrice());
-       product.setSpecialPrice(product1.getSpecialPrice());
+//       product.setProductName(product1.getProductName());
+//       product.setDescription(product1.getDescription());
+//       product.setQuantity(product1.getQuantity());
+//       product.setDiscount(product1.getDiscount());
+   //    product1.setPrice(product.getSpecialPrice());
+//       product.setSpecialPrice(product1.getSpecialPrice());
 
-       Product savedProduct=productRepository.save(product);
+       Product savedProduct=productRepository.save(product1);
 
        List<Cart> carts=cartRepository.findCartByProductId(productId);
        List<CartDTO> cartDTOS=carts.stream().map(cart->{
