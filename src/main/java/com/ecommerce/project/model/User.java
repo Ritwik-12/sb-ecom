@@ -66,12 +66,8 @@ public class User {
     private Set<Product> products=new HashSet<>();
 
 
-    @ManyToMany(cascade={CascadeType.MERGE,CascadeType.PERSIST},
-    fetch=FetchType.EAGER)
-    @JoinTable(name="user_address",
-        joinColumns = @JoinColumn(name="user_id"),
-        inverseJoinColumns = @JoinColumn(name="address_id")
-    )
+    @OneToMany(mappedBy = "user", cascade={CascadeType.MERGE,CascadeType.PERSIST},
+    fetch=FetchType.EAGER,orphanRemoval = true)
     private List<Address> addresses=new ArrayList<>();
 
 

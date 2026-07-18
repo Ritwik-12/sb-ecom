@@ -52,8 +52,8 @@ public class Address {
     @Size(min=6,message="Bulding name must be atleast 6 character")
     private String pinCode;
 
-    @ManyToMany(mappedBy="addresses")
-    @JsonIgnore
-    private List<User> users=new ArrayList<>();
+    @ManyToOne
+    @JoinColumn(name="user_id")
+    private User user;
 
 }
