@@ -4,6 +4,7 @@ package com.ecommerce.project.service;
 import com.ecommerce.project.Payload.AddressDTO;
 import com.ecommerce.project.Repositories.AddressRepository;
 import com.ecommerce.project.Repositories.UserRepository;
+import com.ecommerce.project.exception.ResourceNotFoundException;
 import com.ecommerce.project.model.Address;
 import com.ecommerce.project.model.User;
 import lombok.RequiredArgsConstructor;
@@ -37,4 +38,34 @@ public class AddressServiceImpl implements  AddressService{
 
         return modelMapper.map(savedAddress, AddressDTO.class);
     }
+
+    @Override
+    public List<AddressDTO> getAllAddresses() {
+       List<Address> addresses=addressRepository.findAll();
+       List<AddressDTO> addressDTOS=addresses.stream()
+               .map((address)->modelMapper.map(address, AddressDTO.class))
+               .toList();
+
+       return addressDTOS;
+    }
+
+    @Override
+    public List<AddressDTO> getAddressByUserId(User user) {
+       // List<Address> addresses=addressRepository.findByUserId(user.getUserId());
+        List<Address> addressList=user.getAddresses();
+       return  addressList.stream()
+                .map((address)->modelMapper.map(address,AddressDTO.class))
+                .toList();
+
+    }
+
+    @Override
+    public AddressDTO getAddressById(Long addressId) {
+       Address address= addressRepository.findById(addressId)
+               .orElseThrow(()->new ResourceNotFoundException("Address","AddressId",addressId));
+
+       return modelMapper.map(address,AddressDTO.class);
+    }
+
+
 }
