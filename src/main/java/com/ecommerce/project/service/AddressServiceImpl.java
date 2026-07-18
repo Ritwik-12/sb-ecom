@@ -7,6 +7,7 @@ import com.ecommerce.project.Repositories.UserRepository;
 import com.ecommerce.project.exception.ResourceNotFoundException;
 import com.ecommerce.project.model.Address;
 import com.ecommerce.project.model.User;
+import com.ecommerce.project.util.AuthUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -23,6 +24,7 @@ public class AddressServiceImpl implements  AddressService{
     private final AddressRepository addressRepository;
     private final ModelMapper modelMapper;
     private final UserRepository userRepository;
+    private final AuthUtil authUtil;
 
     @Transactional
     @Override
@@ -65,6 +67,39 @@ public class AddressServiceImpl implements  AddressService{
                .orElseThrow(()->new ResourceNotFoundException("Address","AddressId",addressId));
 
        return modelMapper.map(address,AddressDTO.class);
+    }
+
+    @Transactional
+    @Override
+    public AddressDTO updateAddress(Long addressId, AddressDTO addressDTO) {
+       Address address=addressRepository.findById(addressId)
+               .orElseThrow(()->new ResourceNotFoundException("Address","AddressId",addressId));
+
+       Address adddressToUpdate=modelMapper.map(addressDTO, Address.class);
+       adddressToUpdate.setAddressId(address.getAddressId());
+       Address address1=addressRepository.save(adddressToUpdate);
+       //User user=address.getUser();
+        User user=authUtil.loggedInUser();
+       user.getAddresses().removeIf(address2 ->address2.getAddressId().equals(addressId));
+       user.getAddresses().add(address1);
+        userRepository.save(user);
+       return modelMapper.map(address1,AddressDTO.class);
+    }
+
+    @Transactional
+    @Override
+    public AddressDTO deleteAddressById(Long addressId) {
+           Address address=addressRepository.findById(addressId)
+                        .orElseThrow(()->new ResourceNotFoundException("Address","AddressId",addressId));
+
+           addressRepository.deleteById(addressId);
+
+           //User user =address.getUser();
+           User user =authUtil.loggedInUser();
+           user.getAddresses().removeIf(address1 -> address1.getAddressId().equals(addressId));
+           userRepository.save(user);
+           return modelMapper.map(address, AddressDTO.class);
+
     }
 
 
