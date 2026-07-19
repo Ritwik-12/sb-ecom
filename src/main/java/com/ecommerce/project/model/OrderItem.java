@@ -32,4 +32,7 @@ public class OrderItem {
     private double discount;
 
     private double orderedProductPrice;
+
+    public void setD() {
+    }
 }

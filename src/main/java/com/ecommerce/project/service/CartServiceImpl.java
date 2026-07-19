@@ -316,8 +316,8 @@ public class CartServiceImpl implements CartService {
 
         }
 
-        product.setQuantity(product.getQuantity()-quantity); //
-        productRepository.save(product); //
+//        product.setQuantity(product.getQuantity()-quantity); //
+//        productRepository.save(product); //
 
         CartItem updatedCartItem = cartItemRepository.save(item);
 
