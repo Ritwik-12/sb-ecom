@@ -283,16 +283,23 @@ public class CartServiceImpl implements CartService {
         }
 
         int newQuantity = item.getQuantity() + quantity;
-
+        System.out.println("Quantity "+newQuantity);
         if (newQuantity < 0) {
             throw new ApiException("The resulting quantity can not be negative!!");
         }
 
         if (newQuantity == 0) {
+            System.out.println("if logic kicked in ");
             cart.setTotalPrice(cart.getTotalPrice() - (item.getProductPrice() * item.getQuantity()));
+            System.out.println(cart.getTotalPrice());
+           // List<CartItem> items=cart.getItems();
             cart.getItems().remove(item);
+          //  cartItemRepository.delete(item);
+           // cartItemRepository.deleteCartItemByProductIdAndCartId(productId,cartId);
+            //deleteProductFromCart(cartId,productId);
+            //cartItemRepository.save(item);
+           // cartItemRepository.save(item);
             cartRepository.save(cart);
-
             // Cart is now empty — throw instead of returning an empty CartDTO
             if (cart.getItems().isEmpty()) {
                 throw new ApiException("Cart is empty!!!");
@@ -306,13 +313,24 @@ public class CartServiceImpl implements CartService {
 
             cartItemRepository.save(item);
             cartRepository.save(cart);
+
         }
 
+        product.setQuantity(product.getQuantity()-quantity); //
+        productRepository.save(product); //
+
+        CartItem updatedCartItem = cartItemRepository.save(item);
+
+            if(updatedCartItem.getQuantity()==0){
+                cartItemRepository.deleteById(updatedCartItem.getId());
+            }
         CartDTO cartDTO = modelMapper.map(cart, CartDTO.class);
 
         List<ProductDTO> productDTOs = cart.getItems().stream().map(i -> {
             ProductDTO prd = modelMapper.map(i.getProduct(), ProductDTO.class);
-            prd.setQuantity(i.getQuantity());
+            System.out.println(i.getQuantity());
+            //prd.setQuantity(i.getQuantity());
+            prd.setQuantity(newQuantity);
             return prd;
         }).toList();
 
