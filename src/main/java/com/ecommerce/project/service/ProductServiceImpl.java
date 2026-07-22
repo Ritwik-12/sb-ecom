@@ -177,18 +177,25 @@ public class ProductServiceImpl implements ProductService{
                .orElseThrow(()->new ResourceNotFoundException("product","productId",productId));
 
        Product product1= modelMapper.map(productDTO,Product.class);
-
+        System.out.println("updated product rpice "+product1.getPrice());
+        double specialPrice = product1.getPrice() -
+                ((product1.getDiscount() * 0.01) * product1.getPrice());
+        product1.setSpecialPrice(specialPrice);
+        System.out.println("p1sp"+ product1.getSpecialPrice());
        product1.setProductId(productId);
 //       product.setProductName(product1.getProductName());
 //       product.setDescription(product1.getDescription());
 //       product.setQuantity(product1.getQuantity());
 //       product.setDiscount(product1.getDiscount());
-   //    product1.setPrice(product.getSpecialPrice());
+//       product.setPrice(product1.getPrice());
 //       product.setSpecialPrice(product1.getSpecialPrice());
-
+        System.out.println("product price"+product1.getSpecialPrice());
        Product savedProduct=productRepository.save(product1);
 
        List<Cart> carts=cartRepository.findCartByProductId(productId);
+       // System.out.println("user cart "+carts.getFirst().getId());
+    //    System.out.println("cart is "+carts.getFirst());
+       // System.out.println(carts.getFirst().getTotalPrice());
        List<CartDTO> cartDTOS=carts.stream().map(cart->{
            CartDTO cartDTO=modelMapper.map(cart,CartDTO.class);
            List<ProductDTO> productDTOS=cart.getItems().stream().map(p->

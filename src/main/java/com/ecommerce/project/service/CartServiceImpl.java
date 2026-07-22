@@ -74,65 +74,92 @@ public class CartServiceImpl implements CartService {
             newCartItem.setProductPrice(product.getSpecialPrice());
               cart.getItems().add(newCartItem);
             cartItemRepository.save(newCartItem);
-            product.setQuantity(product.getQuantity()-quantity);
+            //product.setQuantity(product.getQuantity()-quantity);
             cart.setTotalPrice(cart.getTotalPrice()+(product.getSpecialPrice()*quantity));
 
            cartRepository.save(cart);
-        System.out.println("cart is "+cart);
            CartDTO cartDTO=modelMapper.map(cart, CartDTO.class);
 
            List<CartItem> cartItems=cart.getItems();
-        System.out.println(cartItems);
            List<ProductDTO> productStream=cartItems.stream().map(item->{
                 ProductDTO map=modelMapper.map(item.getProduct(), ProductDTO.class);
                 map.setQuantity(item.getQuantity());
                 return map;
            }).toList();
-        System.out.println("products in the cart:"+productStream);
            cartDTO.setProducts(productStream);
            return cartDTO;
 
     }
 
-    @Transactional
+//    @Transactional
+//    @Override
+//    public List<CartDTO> getAllCarts() {
+//       List<Cart> carts= cartRepository.findAll();
+//       if(carts.isEmpty()) throw new ApiException("No cart's found!!");
+//       List<CartDTO> cartDTOS= carts.stream()
+//               .map((c)-> {
+//                   CartDTO cartDTO = modelMapper.map(c, CartDTO.class);
+//                   List<ProductDTO> products=c.getItems().stream()
+//                           .map((item)->modelMapper.map(item, ProductDTO.class))
+//                           .toList();
+//                     cartDTO.setProducts(products);
+//                     return cartDTO;
+//
+//               }).toList();
+//
+//       return cartDTOS;
+//
+//    }
+
+    @Transactional(readOnly = true)
     @Override
     public List<CartDTO> getAllCarts() {
-       List<Cart> carts= cartRepository.findAll();
-       if(carts.isEmpty()) throw new ApiException("No cart's found!!");
-       List<CartDTO> cartDTOS= carts.stream()
-               .map((c)-> {
-                   CartDTO cartDTO = modelMapper.map(c, CartDTO.class);
-                   List<ProductDTO> products=c.getItems().stream()
-                           .map((item)->modelMapper.map(item, ProductDTO.class))
-                           .toList();
-                     cartDTO.setProducts(products);
-                     return cartDTO;
+        List<Cart> carts = cartRepository.findAll();
+        if (carts.isEmpty()) throw new ApiException("No cart's found!!");
 
-               }).toList();
+        List<CartDTO> cartDTOS = carts.stream()
+                .map(c -> {
+                    CartDTO cartDTO = modelMapper.map(c, CartDTO.class);
 
-       return cartDTOS;
+                    List<ProductDTO> products = c.getItems().stream()
+                            .map(item -> {
+                                ProductDTO dto = modelMapper.map(item.getProduct(), ProductDTO.class);
+                                dto.setQuantity(item.getQuantity());
+                                dto.setPrice(item.getProduct().getPrice()); // actual price, not discounted
+                                return dto;
+                            })
+                            .toList();
 
+                    cartDTO.setProducts(products);
+                    return cartDTO;
+                })
+                .toList();
+
+        return cartDTOS;
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     @Override
     public CartDTO getCart(String email, Long cartId) {
-        Cart cart =cartRepository.findCartByEmailAndCartId(email,cartId);
-        if(cart==null){
-            throw new ResourceNotFoundException("Cart ","CartId",cartId);
+        Cart cart = cartRepository.findCartByEmailAndCartId(email, cartId);
+        if (cart == null) {
+            throw new ResourceNotFoundException("Cart", "CartId", cartId);
         }
-        CartDTO cartDTO=modelMapper.map(cart,CartDTO.class);
-        cart.getItems().forEach(
-                c->c.getProduct().setQuantity(c.getQuantity())
-        );
-        List<ProductDTO> products=cart.getItems().stream()
-                .map(p->modelMapper.map(p.getProduct(), ProductDTO.class))
+
+        CartDTO cartDTO = modelMapper.map(cart, CartDTO.class);
+
+        List<ProductDTO> products = cart.getItems().stream()
+                .map(item -> {
+                    ProductDTO dto = modelMapper.map(item.getProduct(), ProductDTO.class);
+                    dto.setQuantity(item.getQuantity());       // cart-context quantity, on the DTO
+                  //  dto.setPrice(item.getProductPrice());
+                     dto.setPrice(item.getProduct().getPrice());//price locked in at add-to-cart time
+                    return dto;
+                })
                 .toList();
+
         cartDTO.setProducts(products);
-
-
         return cartDTO;
-
     }
 ///  my cart implementation -- will fix it later
 //    @Transactional
@@ -231,24 +258,30 @@ public class CartServiceImpl implements CartService {
         return "Product"+ cartItem.getProduct().getProductName()+" removed from the cart|||";
     }
 
+    @Transactional
     @Override
     public void updateProductInCart(Long cartId, Long productId) {
         Cart cart=cartRepository.findById(cartId).
                 orElseThrow(()->new ResourceNotFoundException("Cart","CartId",cartId));
+
         Product product= productRepository.findById(productId)
                 .orElseThrow(()->new ResourceNotFoundException("Product","ProductId",productId));
 
+        System.out.println("p quantity"+product.getQuantity());
         CartItem cartItem=cartItemRepository.findCartItemByProductIdAndCartId(cartId,productId);
+
         if(cartItem==null){
             throw new ApiException("Product "+product.getProductName()+" not available in the cart||");
         }
+
         double cartPrice=cart.getTotalPrice()-(cartItem.getProductPrice()*cartItem.getQuantity());
         cartItem.setProductPrice(product.getSpecialPrice());
 
         cart.setTotalPrice(cartPrice+
                 (cartItem.getProductPrice()*cartItem.getQuantity()
                 ));
-        cartItemRepository.save(cartItem);
+        cartRepository.save(cart);
+       cartItem=cartItemRepository.save(cartItem);
 
     }
 

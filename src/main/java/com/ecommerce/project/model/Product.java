@@ -51,6 +51,6 @@ public class Product {
     @JoinColumn(name="seller_id")
     private User user;
 
-//    @OneToMany(mappedBy = "product",cascade = {CascadeType.PERSIST,CascadeType.MERGE},orphanRemoval = true)
-//    private List<CartItem> cartItem=new ArrayList<>();
+    @OneToMany(mappedBy = "product",cascade = {CascadeType.PERSIST,CascadeType.MERGE},orphanRemoval = true)
+    private List<CartItem> cartItem=new ArrayList<>();
 }
