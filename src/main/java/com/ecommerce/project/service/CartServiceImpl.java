@@ -315,7 +315,7 @@ public class CartServiceImpl implements CartService {
             throw new ApiException("Product " + product.getProductName() + " is not available in the cart!!!");
         }
 
-        int newQuantity = item.getQuantity() + quantity; // 4 3 2 1 0
+        int newQuantity = item.getQuantity() + quantity;
         System.out.println("Quantity "+newQuantity);
         if (newQuantity < 0) {
             throw new ApiException("The resulting quantity can not be negative!!");

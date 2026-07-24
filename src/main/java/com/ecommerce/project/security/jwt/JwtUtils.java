@@ -37,15 +37,16 @@ public class JwtUtils {
 
     //Getting JWT form header
     private static final Logger logger= LoggerFactory.getLogger(JwtUtils.class);
-//    public String getJwtFromHeader(HttpServletRequest request){
-//
-//        String bearerToken=request.getHeader("Authorization");
-//        logger.debug("Authorization Header: {} ",bearerToken);
-//        if(bearerToken!=null && bearerToken.startsWith("Bearer ")){
-//            return bearerToken.split("Bearer ")[1];
-//        }
-//        return null;
-//    }
+
+    public String getJwtFromHeader(HttpServletRequest request){
+
+        String bearerToken=request.getHeader("Authorization");
+        logger.debug("Authorization Header: {} ",bearerToken);
+        if(bearerToken!=null && bearerToken.startsWith("Bearer ")){
+            return bearerToken.split("Bearer ")[1];
+        }
+        return null;
+    }
 
     public String getJwtFromCookies(HttpServletRequest request){
         Cookie cookie= WebUtils.getCookie(request,jwtCookie);
