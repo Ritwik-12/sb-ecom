@@ -2,7 +2,11 @@ package com.ecommerce.project.config;
 
 
 import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Contact;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
@@ -23,6 +27,17 @@ public class SwaggerConfig {
                 .addList("Bearer Authentication");
 
         return new OpenAPI()
+                .info(new Info()
+                        .title("Spring Boot eCommerce API")
+                        .version("1.0")
+                        .description("Ecommerce project build using spring boot")
+                        .license(new License().name("Apace 2.0").url("http://rb.com"))
+                        .contact(new Contact()
+                                .name("Ritwik Bhowmik")
+                                .email("ritwikbhowmik08@gmail.com")
+                                .url("https://github.com/Ritwik-12/sb-ecom")))
+                .externalDocs(new ExternalDocumentation()
+                        .description("Project API Documentation"))
                 .components(new Components()
                         .addSecuritySchemes("Bearer Authentication",bearerScheme))
                 .addSecurityItem(bearerRequirement);
