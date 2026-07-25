@@ -9,7 +9,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-@RequiredArgsConstructor
+
 public class   SbEcomApplication implements CommandLineRunner {
 
 
@@ -18,7 +18,7 @@ public class   SbEcomApplication implements CommandLineRunner {
 	private String myVariable;
 
 
-	private final DataService dataService;
+
 
 	public static void main(String[] args) {
 		SpringApplication.run(SbEcomApplication.class, args);
@@ -28,6 +28,6 @@ public class   SbEcomApplication implements CommandLineRunner {
 	public void run(String... args) throws Exception {
 
 		System.out.println("my variable :"+myVariable);
-		System.out.println("This is "+dataService.getData());
+
 	}
 }
