@@ -1,0 +1,37 @@
+* [33mb880eca[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m)[m feat:added dcoker compose file
+* [33m674671c[m[33m ([m[1;31morigin/main[m[33m)[m feat:flyway schema migration added and aws buildspec.yml file for CI/CD
+* [33m9390144[m[33m ([m[1;31morigin/develop[m[33m, [m[1;32mdevelop[m[33m)[m feat:enable flyway and db migration script
+* [33m420abc5[m feat:added environment secrets for both dev and prod env
+* [33m7528f2d[m feat:added spring profile dev and prod env
+* [33m6ea3236[m feat:customizing the swagger document
+* [33m1811473[m feat:added swagger api documentation and OpenAPI config
+* [33m7ad0103[m fix:cart quantity update logic
+* [33m6b98b79[m fix:cart logic and product update logic
+* [33ma5ad352[m feat:added order and payment service
+* [33mb972560[m feat:place order endpoint added
+* [33mee763d4[m feat:order orderItem and Payment model added
+* [33me43bcd1[m feat:update and delete address end point added
+* [33m2e5c651[m feat:get all address, addrss by and and get logedin user adddress end point
+* [33mdc0431d[m feat:create address end point added
+* [33m4c74150[m feat:Address dto and repository added
+* [33mde3e44a[m feat:added postgres db configuration
+* [33mcb88038[m feat:cart modification logic on product update or delete
+* [33m4d6b360[m update product quantity and delete product from cart
+* [33md3ed3c0[m feat: cart end points added and implemented service logic
+* [33mfa88759[m feat:shopping cart Impl cart and cartItem model added
+* [33m0cf1357[m cleanup:removing dubuggin print statements!
+* [33mbcde8a1[m feat:new authuser and signout end points
+* [33madf7e0a[m feat:Implement authentication and authorization
+* [33m8875a83[m feat:New entity added
+* [33mb1ce50e[m feat:Implemenmt User and uniqueConstraints
+* [33m0a42ed6[m feat:pagination and sorting added for products
+* [33m4d8ce86[m feat:validation and image  update endpoint
+* [33m2bbb253[m feat:update and product image
+* [33m6d36218[m feat:more endpoints added in products
+* [33m514b131[m feat:managing products and creating product endpoints
+* [33m24cc386[m feat:Implement Pagination and Sorting
+* [33m1a6a1cf[m feat:implement DTO's for request and response
+* [33mf70b388[m feat:Backend Validation Global & Custom exception Handeling
+* [33md3e0fe2[m feat:optimize the service code and use lombok
+* [33m21094f7[m feat:Databases intigration and persistance data
+* [33m3f89a76[m feat: initial Spring Boot project setup
