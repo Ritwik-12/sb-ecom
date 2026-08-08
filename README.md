@@ -1,1 +1,1 @@
-This is an ecommerce project
+This is an Ecommece Project build with Spring Boot
