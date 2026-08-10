@@ -1,6 +1,5 @@
 version: '3.9'
 
-
 services:
   postgres:
     image: postgres:16
@@ -14,11 +13,28 @@ services:
     volumes:
       - recom-data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL" , "pg_isready -U recom" ]
+      test: ["CMD-SHELL", "pg_isready -U recom"]
       interval: 5s
       timeout: 5s
       retries: 5
 
+  app:
+    build: .
+    container_name: sb-ecom-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:postgresql://postgres:5432
+      DB_NAME: recom
+      DB_USERNAME: recom
+      DB_PASSWORD: recom
+      JWT_SECRET: askjdfipe9458234jh53n4riwejfosdfksdf784jsdnlkfj897sdfjaklsdjf88j84rkjlsdhfou79fkjldsfj
+      JWT_EXPIRATION: 86400000
+      JWT_COOKIENAME: springBootEcom
+
 volumes:
   recom-data:
-
