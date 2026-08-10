@@ -1,24 +1,31 @@
 version: 0.2
 
+env:
+  variables:
+    IMAGE_REPO_NAME: "sb-ecom"
+
 phases:
-  install:
-    runtime-version:
-      java: corretto21
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - IMAGE_TAG=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c1-8)
+      - REPO_URI=$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME
 
   build:
     commands:
-      -echo Building, Testing and packaging the application...
-      -mvn package -DskipTests
+      - echo Building Docker image...
+      - docker build -t $REPO_URI:$IMAGE_TAG -t $REPO_URI:latest .
 
   post_build:
     commands:
-      -echo Build, Testing and packaging completed.
+      - echo Pushing Docker image to ECR...
+      - docker push $REPO_URI:$IMAGE_TAG
+      - docker push $REPO_URI:latest
+      - echo Writing Dockerrun.aws.json...
+      - printf '{"AWSEBDockerrunVersion":"1","Image":{"Name":"%s:%s","Update":"true"},"Ports":[{"ContainerPort":"5000","HostPort":"80"}]}' "$REPO_URI" "$IMAGE_TAG" > Dockerrun.aws.json
 
 artifacts:
   files:
-    -target/*.jar
+    - Dockerrun.aws.json
   discard-paths: yes
-
-cache:
-  paths:
-    - '/root/.m2/**/*'

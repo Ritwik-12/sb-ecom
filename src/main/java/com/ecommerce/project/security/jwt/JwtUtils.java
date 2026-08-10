@@ -25,8 +25,8 @@ import java.util.Date;
 @Component
 public class JwtUtils {
 
-    @Value("${spring.app.jwtExpirationMs}")
-    private Long jwtExpirationInMs;
+    @Value("${spring.app.jwtExpiration}")
+    private Long jwtExpiration;
 
     @Value("${spring.app.jwtSecret}")
     private String jwtSecret;
@@ -85,7 +85,7 @@ public class JwtUtils {
             return Jwts.builder()
                     .subject(username)
                     .issuedAt(new Date())
-                    .expiration(new Date((new Date().getTime()+jwtExpirationInMs)))
+                    .expiration(new Date((new Date().getTime()+jwtExpiration)))
                     .signWith(key())
                     .compact();
     }
