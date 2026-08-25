@@ -25,7 +25,7 @@ import java.util.Date;
 @Component
 public class JwtUtils {
 
-    @Value("${spring.app.jwtExpiration}")
+    @Value("${spring.app.jwtExpirationMs}")
     private Long jwtExpiration;
 
     @Value("${spring.app.jwtSecret}")
