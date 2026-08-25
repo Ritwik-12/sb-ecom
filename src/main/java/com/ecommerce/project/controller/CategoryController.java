@@ -29,7 +29,7 @@ public class CategoryController {
 
     @Tag(name="Category APIs ",description="APIs for managing  categories")
     @Operation(summary="Get All Category",description = "API to get all the  category")
-    @GetMapping("/public/catagory")
+    @GetMapping("/public/categories")
     public ResponseEntity<CategoryResponse> getAllCategories(
             @RequestParam(name="pageNumber", defaultValue = AppConstants.PAGE_NUMBER,required=false) Integer pageNumber,
             @RequestParam(name="pageSize",defaultValue = AppConstants.PAGE_SIZE,required = false) Integer pageSize,

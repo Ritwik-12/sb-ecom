@@ -1,7 +1,6 @@
 package com.ecommerce.project.service;
 
 import com.ecommerce.project.Payload.CartDTO;
-import com.ecommerce.project.Payload.CategoryDto;
 import com.ecommerce.project.Payload.ProductDTO;
 import com.ecommerce.project.Payload.ProductResponse;
 import com.ecommerce.project.Repositories.CartRepository;
@@ -20,15 +19,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @Slf4j
@@ -44,6 +40,9 @@ public class ProductServiceImpl implements ProductService{
 
     @Value("${project.image}")
     private String path;
+
+    @Value("${image.base.url}")
+    private String imageBaseUrl;
 
     @Override
     public ProductDTO addProduct(ProductDTO productDTO, Long categoryId) {
@@ -77,7 +76,7 @@ public class ProductServiceImpl implements ProductService{
     }
 
     @Override
-    public ProductResponse getAllProducts(Integer pageNumber,Integer pageSize,String sortBy,String sortOrder) {
+    public ProductResponse getAllProducts(Integer pageNumber, Integer pageSize, String sortBy, String sortOrder, String keyword, String category) {
 
 
         Sort sortByAndOrder=sortOrder.equalsIgnoreCase("asc")?
@@ -86,7 +85,25 @@ public class ProductServiceImpl implements ProductService{
 
         Pageable pageDetails= PageRequest.of(pageNumber,pageSize,sortByAndOrder);
 
-        Page<Product> productPage=productRepository.findAll(pageDetails);
+
+        Specification<Product> spec = null;
+
+        if (keyword != null && !keyword.isEmpty()) {
+            Specification<Product> keywordSpec = (root, query, cb) ->
+                    cb.like(cb.lower(root.get("productName")), "%" + keyword.toLowerCase() + "%");
+            spec = keywordSpec;
+        }
+
+        if (category != null && !category.isEmpty()) {
+            Specification<Product> categorySpec = (root, query, cb) ->
+                    cb.like(cb.lower(root.get("category").get("categoryName")), "%" + category.toLowerCase() + "%");
+            spec = (spec == null) ? categorySpec : spec.and(categorySpec);
+        }
+
+
+
+
+        Page<Product> productPage=productRepository.findAll(spec,pageDetails);
 
         List<Product> products=productPage.getContent();
 
@@ -94,8 +111,13 @@ public class ProductServiceImpl implements ProductService{
            throw new ApiException("No product created yet!!!");
        }
          List<ProductDTO> allProduct=products.stream()
-                 .map((p)->modelMapper.map(p,ProductDTO.class))
-                 .toList();
+                 .map((p)->
+                         {
+                            ProductDTO productDTO= modelMapper.map(p,ProductDTO.class);
+                            productDTO.setImage(constructImageUrl(p.getImage()));
+                            return productDTO;
+                         })
+                             .toList();
          ProductResponse productResponse=new ProductResponse();
          productResponse.setContent(allProduct);
          productResponse.setPageNumber(productPage.getNumber());
@@ -106,6 +128,10 @@ public class ProductServiceImpl implements ProductService{
 
          return productResponse;
     }
+    private String constructImageUrl(String imageName){
+        return imageBaseUrl.endsWith("/")?imageBaseUrl+imageName : imageBaseUrl +"/"+imageName;
+    }
+
 
     @Override
     public ProductResponse searchProductByCategory(Long categoryId,Integer pageNumber,Integer pageSize,String sortBy,String sortOrder) {
