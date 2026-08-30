@@ -49,8 +49,9 @@ public class CartController {
         Cart cart=cartRepository.findCartByEmail(emailId);
         Long cartId=cart.getId();
        CartDTO cartDTO= cartService.getCart(emailId,cartId);
-       return new ResponseEntity<CartDTO>(cartDTO,HttpStatus.FOUND);
+       return new ResponseEntity<CartDTO>(cartDTO,HttpStatus.OK);
     }
+
     @PutMapping("/cart/product/{productId}/quantity/{operation}")
     public ResponseEntity<CartDTO> updateProductQuantity(
             @PathVariable Long productId,

@@ -61,6 +61,28 @@ public class OrderServiceImpl implements OrderService{
         if(cartItems.isEmpty()){
             throw new ApiException("Cart is empty!");
         }
+        // new validation for cart
+
+        for (CartItem cartItem : cartItems) {
+
+            Product product = cartItem.getProduct();
+            int requestedQuantity = cartItem.getQuantity();
+            int availableQuantity = product.getQuantity();
+
+            if (availableQuantity <= 0) {
+                throw new ApiException(
+                        product.getProductName() + " is currently out of stock."
+                );
+            }
+
+            if (requestedQuantity > availableQuantity) {
+                throw new ApiException(
+                        "Only " + availableQuantity +
+                                " units of " + product.getProductName() +
+                                " are currently available."
+                );
+            }
+        }
 
         List<OrderItem> orderItems=new ArrayList<>();
         for(CartItem cartItem:cartItems){
