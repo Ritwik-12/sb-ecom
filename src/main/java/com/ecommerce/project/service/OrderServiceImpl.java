@@ -6,6 +6,8 @@ import com.ecommerce.project.Repositories.*;
 import com.ecommerce.project.exception.ApiException;
 import com.ecommerce.project.exception.ResourceNotFoundException;
 import com.ecommerce.project.model.*;
+import com.stripe.exception.StripeException;
+import com.stripe.model.PaymentIntent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
@@ -15,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +34,13 @@ public class OrderServiceImpl implements OrderService{
 
     private final CartService cartService;
 
+    private final StripeService stripeService;
+
+
+
+    private static final Set<String> ONLINE_PAYMENT_METHODS= Set.of("ONLINE","STRIPE","CARD");
+
+
     @Transactional
     @Override
     public OrderDTO placeOrder(String emailId, Long addressId, String paymentMethod, String pgName, String pgPaymentId, String pgStatus, String pgResponseMessage) {
@@ -42,6 +52,44 @@ public class OrderServiceImpl implements OrderService{
         }
         Address address=addressRepository.findById(addressId)
                 .orElseThrow(()->new ResourceNotFoundException("Address","AddressId",addressId));
+
+
+
+        String verifiedStatus=pgStatus;
+
+        if(paymentMethod !=null && ONLINE_PAYMENT_METHODS.contains(paymentMethod.toUpperCase())){
+            if(pgPaymentId ==null || pgPaymentId.isBlank()){
+
+                throw new ApiException("Missin payment reference for online payment.");
+            }
+
+            PaymentIntent paymentIntent;
+
+            try{
+                paymentIntent=stripeService.retrievePaymentIntent(pgPaymentId);
+            }catch(StripeException e){
+                log.error("Failed to retrieve PaymentIntent {} from stripe ",pgPaymentId,e);
+                throw new ApiException("Unable to verify payment with stripe!");
+            }
+
+            if(!"succeeded".equals(paymentIntent.getStatus())){
+                throw new ApiException("Payment has not been completed. Current status: "+paymentIntent.getStatus());
+            }
+
+            long expectedAmount=Math.round(cart.getTotalPrice()*100);
+
+            if(paymentIntent.getAmount() ==null ||paymentIntent.getAmount() !=expectedAmount){
+                log.error("Amount mismatch for paymentIntent {}: expected {} got {}",pgPaymentId,
+                        expectedAmount,paymentIntent.getAmount()
+                        );
+
+                throw new ApiException("Payment amount does not match order total.");
+            }
+
+            verifiedStatus=paymentIntent.getStatus();
+
+        }
+
 
         Order order =new Order();
         order.setEmail(emailId);
