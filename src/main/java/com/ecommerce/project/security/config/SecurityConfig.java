@@ -93,6 +93,7 @@ public class SecurityConfig {
                                 .requestMatchers("/swagger-ui/**").permitAll()
                                 .requestMatchers("/api/test/**").permitAll()
                                 .requestMatchers("/images/**").permitAll()
+                                .requestMatchers("/api/webhook/**").permitAll()
                                 .anyRequest().authenticated()
                 );
 

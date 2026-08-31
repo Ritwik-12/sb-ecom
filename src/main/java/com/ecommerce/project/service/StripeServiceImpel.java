@@ -42,4 +42,9 @@ public class StripeServiceImpel implements  StripeService{
         PaymentIntent paymentIntent =  PaymentIntent.create(params);
         return paymentIntent;
     }
+
+    @Override
+    public PaymentIntent retrievePaymentIntent(String paymentIntentId) throws StripeException {
+        return PaymentIntent.retrieve(paymentIntentId);
+    }
 }
