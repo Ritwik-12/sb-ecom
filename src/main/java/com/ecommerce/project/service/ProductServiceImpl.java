@@ -38,11 +38,11 @@ public class ProductServiceImpl implements ProductService{
     private final CartRepository cartRepository;
     private final CartService  cartService;
 
-    @Value("${project.image}")
-    private String path;
-
-    @Value("${image.base.url}")
-    private String imageBaseUrl;
+//    @Value("${project.image}")
+//    private String path;
+//
+//    @Value("${image.base.url}")
+//    private String imageBaseUrl;
 
     @Override
     public ProductDTO addProduct(ProductDTO productDTO, Long categoryId) {
@@ -114,7 +114,7 @@ public class ProductServiceImpl implements ProductService{
                  .map((p)->
                          {
                             ProductDTO productDTO= modelMapper.map(p,ProductDTO.class);
-                            productDTO.setImage(constructImageUrl(p.getImage()));
+                            productDTO.setImage(p.getImage());
                             return productDTO;
                          })
                              .toList();
@@ -128,9 +128,9 @@ public class ProductServiceImpl implements ProductService{
 
          return productResponse;
     }
-    private String constructImageUrl(String imageName){
-        return imageBaseUrl.endsWith("/")?imageBaseUrl+imageName : imageBaseUrl +"/"+imageName;
-    }
+//    private String constructImageUrl(String imageName){
+//        return imageBaseUrl.endsWith("/")?imageBaseUrl+imageName : imageBaseUrl +"/"+imageName;
+//    }
 
 
     @Override
@@ -257,10 +257,12 @@ public class ProductServiceImpl implements ProductService{
 
         //upload the image in server
         //get the file name of uploaded image
-        String fileName=fileService.uploadImage(path,image);
+//        String fileName=fileService.uploadImage(path,image);
+
+        String imageUrl=fileService.uploadImage(image);
 
         //updating the new file name to the product
-        productFromDB.setImage(fileName);
+        productFromDB.setImage(imageUrl);  //store the full s3 url directly now
         //save the updated product
         Product updatedProduct=productRepository.save(productFromDB);
         return modelMapper.map(updatedProduct,ProductDTO.class);
