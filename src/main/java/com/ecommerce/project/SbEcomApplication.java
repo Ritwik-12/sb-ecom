@@ -19,8 +19,6 @@ public class   SbEcomApplication implements CommandLineRunner {
 	@Value("${my.variable}")
 	private String myVariable;
 
-	@Value("${spring.datasource.url}")
-	private String myurl;
 
 
 
@@ -36,7 +34,7 @@ public class   SbEcomApplication implements CommandLineRunner {
 	public void run(String... args) throws Exception {
 
 		System.out.println("my variable :"+myVariable);
-		System.out.println("Db url :"+myurl);
+
 
 	}
 }
