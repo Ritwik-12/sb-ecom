@@ -34,6 +34,8 @@ public class Payment {
     private String pgStatus;
     private String pgResponseMessage;
     private String pgName;
+    //added for razorpay
+    private String pgOrderId;
 
     //custom constructor
 
@@ -43,5 +45,6 @@ public class Payment {
             this.pgStatus=pgStatus;
             this.pgResponseMessage=pgResponseMessage;
             this.pgName=pgName;
+
     }
 }

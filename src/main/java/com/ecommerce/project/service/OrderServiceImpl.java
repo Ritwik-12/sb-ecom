@@ -165,4 +165,34 @@ public class OrderServiceImpl implements OrderService{
         orderDTO.setAddressId(addressId);
         return orderDTO;
     }
+
+    @Transactional(readOnly = true)
+    @Override
+    public long validateCheckoutAndGetAmountInPaise(String emailId) {
+        Cart cart = cartRepository.findCartByEmail(emailId);
+        if (cart == null) {
+            throw new ResourceNotFoundException("Cart", "email", emailId);
+        }
+        if (cart.getItems().isEmpty()) {
+            throw new ApiException("Cart is empty!");
+        }
+        validateStock(cart);
+        return Math.round(cart.getTotalPrice() * 100);
+    }
+
+    private void validateStock(Cart cart) {
+        for (CartItem cartItem : cart.getItems()) {
+            Product product = cartItem.getProduct();
+            int requestedQuantity = cartItem.getQuantity();
+            int availableQuantity = product.getQuantity();
+
+            if (availableQuantity <= 0) {
+                throw new ApiException(product.getProductName() + " is currently out of stock.");
+            }
+            if (requestedQuantity > availableQuantity) {
+                throw new ApiException("Only " + availableQuantity + " units of "
+                        + product.getProductName() + " are currently available.");
+            }
+        }
+    }
 }
