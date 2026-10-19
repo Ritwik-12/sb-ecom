@@ -41,17 +41,17 @@ public class FileServiceImpl implements FileService{
         String randomId= UUID.randomUUID().toString();
         String fileName=randomId.concat(originalFileName.substring(originalFileName.lastIndexOf(".")));
 
-
+//--need to uncomment fo s3 ---
         PutObjectRequest putObjectRequest= PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(fileName)
                 .contentType(file.getContentType())
                 .build();
 
+//--- for s3
+        s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(),file.getSize()));
 
-         s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(file.getInputStream(),file.getSize()));
-
-//        //check if path exits and create
+////        //check if path exits and create
 //        String filePath=path+ File.separator+fileName;
 //
 //        File folder=new File(path);
@@ -66,6 +66,6 @@ public class FileServiceImpl implements FileService{
 //        return fileName;
 
         //return full public s3 url directly
-        return String.format("https://%s.s3.%s.amazonaws.com/%s",bucketName,region,fileName);
+       return String.format("https://%s.s3.%s.amazonaws.com/%s",bucketName,region,fileName);
     }
 }

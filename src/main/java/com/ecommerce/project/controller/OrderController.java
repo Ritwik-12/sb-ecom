@@ -3,8 +3,10 @@ package com.ecommerce.project.controller;
 
 import com.ecommerce.project.Payload.OrderDTO;
 import com.ecommerce.project.Payload.OrderRequestDTO;
+import com.ecommerce.project.Payload.RazorpayOrderResponse;
 import com.ecommerce.project.Payload.StripePaymentDTO;
 import com.ecommerce.project.service.OrderService;
+import com.ecommerce.project.service.RazorpayServiceImpl;
 import com.ecommerce.project.service.StripeService;
 import com.ecommerce.project.util.AuthUtil;
 import com.stripe.exception.StripeException;
@@ -25,6 +27,7 @@ public class OrderController {
     private final OrderService orderService;
     private  final AuthUtil authUtil;
     private final StripeService stripeService;
+    private final RazorpayServiceImpl razorpayService;
 
 
     @PostMapping("/order/users/payments/{paymentMethod}")
@@ -48,8 +51,20 @@ public class OrderController {
     }
 
     @PostMapping("/order/stripe-client-secret")
-    public ResponseEntity<String> createStripePaymentSecret(@RequestBody StripePaymentDTO stripePaymentDTO ) throws StripeException {
-        PaymentIntent paymentIntent=stripeService.paymentIntent(stripePaymentDTO);
-        return new ResponseEntity<>(paymentIntent.getClientSecret(),HttpStatus.CREATED);
+    public ResponseEntity<String> createStripePaymentSecret(@RequestBody(required = false) StripePaymentDTO stripePaymentDTO ) throws StripeException {
+        String emailId = authUtil.loggedInEmail();
+        long amountInPaise = orderService.validateCheckoutAndGetAmountInPaise(emailId);
+
+        StripePaymentDTO serverSide = new StripePaymentDTO(amountInPaise, "inr");
+        PaymentIntent paymentIntent = stripeService.paymentIntent(serverSide);
+        return new ResponseEntity<>(paymentIntent.getClientSecret(), HttpStatus.CREATED);
+    }
+
+
+
+
+    @PostMapping("/order/razorpay/create")
+    public ResponseEntity<RazorpayOrderResponse> createRazorpayOrder() {
+        return ResponseEntity.ok(razorpayService.createOrderForCart(authUtil.loggedInEmail()));
     }
 }
