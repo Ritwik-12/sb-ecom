@@ -15,5 +15,7 @@ public class OrderRequestDTO {
     private String pgPaymentId;
     private String pgStatus;
     private String pgResponseMessage;
+    private String pgOrderId;      // razorpay_order_id
+    private String pgSignature;    // razorpay_signature
 
 }

@@ -34,7 +34,7 @@ public class StripeWebhookController {
     private String webhookSecret;
 
 
-    @PostMapping
+    @PostMapping("/stripe")
     public ResponseEntity<String> handleStripeWebhook(
         HttpServletRequest request) throws IOException {
 

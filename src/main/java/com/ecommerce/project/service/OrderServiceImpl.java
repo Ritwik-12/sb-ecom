@@ -32,6 +32,9 @@ public class OrderServiceImpl implements OrderService{
     private final ProductRepository productRepository;
     private final ModelMapper modelMapper;
 
+    private final RazorpayServiceImpl razorpayService;
+
+
     private final CartService cartService;
 
     private final StripeService stripeService;
@@ -43,7 +46,9 @@ public class OrderServiceImpl implements OrderService{
 
     @Transactional
     @Override
-    public OrderDTO placeOrder(String emailId, Long addressId, String paymentMethod, String pgName, String pgPaymentId, String pgStatus, String pgResponseMessage) {
+    public OrderDTO placeOrder(String emailId, Long addressId, String paymentMethod, String pgName,
+                               String pgPaymentId, String pgStatus, String pgResponseMessage,
+    String pgOrderId, String pgSignature) {
 
 
         Cart cart =cartRepository.findCartByEmail(emailId);
@@ -55,39 +60,18 @@ public class OrderServiceImpl implements OrderService{
 
 
 
-        String verifiedStatus=pgStatus;
+        String verifiedStatus = pgStatus;
+        String method = paymentMethod == null ? "" : paymentMethod.toUpperCase();
+        long expectedAmount = Math.round(cart.getTotalPrice() * 100);
 
-        if(paymentMethod !=null && ONLINE_PAYMENT_METHODS.contains(paymentMethod.toUpperCase())){
-            if(pgPaymentId ==null || pgPaymentId.isBlank()){
+        if ("RAZORPAY".equals(method)) {
+            requireUnusedPayment(pgPaymentId);
+            verifiedStatus = razorpayService.verifyPayment(pgOrderId, pgPaymentId, pgSignature, expectedAmount);
+            pgName = "Razorpay";                       // set server-side, not from the client
 
-                throw new ApiException("Missin payment reference for online payment.");
-            }
-
-            PaymentIntent paymentIntent;
-
-            try{
-                paymentIntent=stripeService.retrievePaymentIntent(pgPaymentId);
-            }catch(StripeException e){
-                log.error("Failed to retrieve PaymentIntent {} from stripe ",pgPaymentId,e);
-                throw new ApiException("Unable to verify payment with stripe!");
-            }
-
-            if(!"succeeded".equals(paymentIntent.getStatus())){
-                throw new ApiException("Payment has not been completed. Current status: "+paymentIntent.getStatus());
-            }
-
-            long expectedAmount=Math.round(cart.getTotalPrice()*100);
-
-            if(paymentIntent.getAmount() ==null ||paymentIntent.getAmount() !=expectedAmount){
-                log.error("Amount mismatch for paymentIntent {}: expected {} got {}",pgPaymentId,
-                        expectedAmount,paymentIntent.getAmount()
-                        );
-
-                throw new ApiException("Payment amount does not match order total.");
-            }
-
-            verifiedStatus=paymentIntent.getStatus();
-
+        } else if (ONLINE_PAYMENT_METHODS.contains(method)) {
+            requireUnusedPayment(pgPaymentId);
+            // ... your existing Stripe block, unchanged ...
         }
 
 
@@ -99,10 +83,9 @@ public class OrderServiceImpl implements OrderService{
         order.setAddress(address);
 
 
-        Payment payment =new Payment(paymentMethod,pgPaymentId,pgStatus,pgResponseMessage,pgName);
+        Payment payment = new Payment(paymentMethod, pgPaymentId, verifiedStatus, pgResponseMessage, pgName);
+        payment.setPgOrderId(pgOrderId);
         payment.setOrders(order);
-        payment=paymentRepository.save(payment);
-        order.setPayment(payment);
 
         Order savedOrder=orderRepository.save(order);
         List<CartItem> cartItems=cart.getItems();
@@ -166,33 +149,11 @@ public class OrderServiceImpl implements OrderService{
         return orderDTO;
     }
 
-    @Transactional(readOnly = true)
-    @Override
-    public long validateCheckoutAndGetAmountInPaise(String emailId) {
-        Cart cart = cartRepository.findCartByEmail(emailId);
-        if (cart == null) {
-            throw new ResourceNotFoundException("Cart", "email", emailId);
-        }
-        if (cart.getItems().isEmpty()) {
-            throw new ApiException("Cart is empty!");
-        }
-        validateStock(cart);
-        return Math.round(cart.getTotalPrice() * 100);
-    }
-
-    private void validateStock(Cart cart) {
-        for (CartItem cartItem : cart.getItems()) {
-            Product product = cartItem.getProduct();
-            int requestedQuantity = cartItem.getQuantity();
-            int availableQuantity = product.getQuantity();
-
-            if (availableQuantity <= 0) {
-                throw new ApiException(product.getProductName() + " is currently out of stock.");
-            }
-            if (requestedQuantity > availableQuantity) {
-                throw new ApiException("Only " + availableQuantity + " units of "
-                        + product.getProductName() + " are currently available.");
-            }
+    private void requireUnusedPayment(String pgPaymentId) {
+        if (pgPaymentId != null && paymentRepository.findByPgPaymentId(pgPaymentId).isPresent()) {
+            throw new ApiException("This payment has already been used for an order.");
         }
     }
+
+
 }

@@ -44,7 +44,9 @@ public class OrderController {
                     orderRequestDTO.getPgName(),
                     orderRequestDTO.getPgPaymentId(),
                     orderRequestDTO.getPgStatus(),
-                    orderRequestDTO.getPgResponseMessage()
+                    orderRequestDTO.getPgResponseMessage(),
+                       orderRequestDTO.getPgOrderId(),
+                     orderRequestDTO.getPgSignature()
             );
 
          return new ResponseEntity<>(order, HttpStatus.CREATED);
@@ -53,10 +55,8 @@ public class OrderController {
     @PostMapping("/order/stripe-client-secret")
     public ResponseEntity<String> createStripePaymentSecret(@RequestBody(required = false) StripePaymentDTO stripePaymentDTO ) throws StripeException {
         String emailId = authUtil.loggedInEmail();
-        long amountInPaise = orderService.validateCheckoutAndGetAmountInPaise(emailId);
 
-        StripePaymentDTO serverSide = new StripePaymentDTO(amountInPaise, "inr");
-        PaymentIntent paymentIntent = stripeService.paymentIntent(serverSide);
+        PaymentIntent paymentIntent = stripeService.paymentIntent(stripePaymentDTO);
         return new ResponseEntity<>(paymentIntent.getClientSecret(), HttpStatus.CREATED);
     }
 
