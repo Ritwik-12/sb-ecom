@@ -5,6 +5,7 @@ on:
   pull_request:
     branches:
       - main
+
   push:
     branches:
       - main
@@ -39,21 +40,28 @@ jobs:
           --health-retries 10
 
     env:
+      # Required by the AWS SDK in FileServiceImpl
+      AWS_REGION: ap-south-1
+      S3_BUCKET_REGION: ap-south-1
+
+      # CI database; these are not production credentials
       SPRING_PROFILES_ACTIVE: prod
       DB_URL: jdbc:postgresql://localhost:5432
       DB_NAME: recom
       DB_USERNAME: recom
       DB_PASSWORD: recom
 
-      # CI-only dummy values. Never use these in production.
+      # CI-only dummy credentials
       JWT_SECRET: Y2ktb25seS1rZXktbm90LWZvci1wcm9kdWN0aW9uLTM0NTY3ODkwYWJjZGVmZ2hpamts
       JWT_EXPIRATION: "86400000"
       JWT_COOKIENAME: testCookie
+
       S3_BUCKET_NAME: ci-test-bucket
-      S3_BUCKET_REGION: ap-south-1
+
       RAZORPAY_KEY_ID: ci-test-key
       RAZORPAY_KEY_SECRET: ci-test-secret
       RAZORPAY_WEBHOOK_SECRET: ci-test-webhook
+
       STRIPE_SECRET_KEY: ci_test_secret
       STRIPE_WEBHOOK_SECRET: ci_test_webhook
 
@@ -108,7 +116,7 @@ jobs:
     name: Deploy to Elastic Beanstalk
     needs: build-and-test
 
-    # Deploy only after a successful build on main.
+    # Deploy only after a successful push to main
     if: >-
       github.event_name == 'push' &&
       github.ref == 'refs/heads/main'
@@ -140,7 +148,6 @@ jobs:
 
           test -s deploy-bundle/application.jar
 
-          # Java SE Elastic Beanstalk runs this command.
           printf '%s\n' \
             'web: java -Dspring.profiles.active=prod -jar application.jar' \
             > deploy-bundle/Procfile
@@ -159,11 +166,10 @@ jobs:
 
       - name: Upload bundle to S3
         shell: bash
-        env:
-          VERSION_LABEL: sb-ecom-${{ github.sha }}
         run: |
           set -euo pipefail
 
+          VERSION_LABEL="sb-ecom-${GITHUB_SHA}"
           ARTIFACT_KEY="deploys/sb-ecom/${VERSION_LABEL}/deployment.zip"
 
           aws s3 cp deployment.zip \
