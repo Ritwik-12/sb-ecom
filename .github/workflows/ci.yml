@@ -41,7 +41,7 @@ jobs:
       DB_NAME: recom
       DB_USERNAME: recom
       DB_PASSWORD: recom
-      JWT_SECRET: test-only-secret-for-ci-never-use-in-production
+      JWT_SECRET: Y2ktb25seS1rZXktbm90LWZvci1wcm9kdWN0aW9uLTM0NTY3ODkwYWJjZGVmZ2hpamts
       JWT_EXPIRATION: "86400000"
       JWT_COOKIENAME: testCookie
       S3_BUCKET_NAME: ci-test-bucket
