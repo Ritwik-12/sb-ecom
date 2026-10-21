@@ -19,6 +19,22 @@ jobs:
   test:
     name: Build and test
     runs-on: ubuntu-24.04
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: sbecom_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - uses: actions/checkout@v5
 
@@ -32,6 +48,12 @@ jobs:
           cache: maven
 
       - name: Run tests
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/sbecom_test
+          SPRING_DATASOURCE_USERNAME: test
+          SPRING_DATASOURCE_PASSWORD: test
+          SPRING_APP_JWTSECRET: ci-only-secret-key-that-is-long-enough-for-hs256-signing
+          SPRING_APP_JWTEXPIRATION: 3600000
         run: ./mvnw -B verify
 
   deploy:
@@ -42,6 +64,7 @@ jobs:
     concurrency:
       group: deploy-prod
       cancel-in-progress: false
+
     steps:
       - uses: actions/checkout@v5
 
