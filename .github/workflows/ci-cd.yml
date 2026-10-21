@@ -1,0 +1,241 @@
+
+name: SB Ecom CI/CD
+
+on:
+  pull_request:
+    branches:
+      - main
+
+  push:
+    branches:
+      - main
+      - "feature/**"
+      - "ci/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sb-ecom-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-test:
+    name: Build and test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: recom
+          POSTGRES_USER: recom
+          POSTGRES_PASSWORD: recom
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U recom -d recom"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # Required by the AWS SDK in FileServiceImpl
+      AWS_REGION: ap-south-1
+      S3_BUCKET_REGION: ap-south-1
+
+      # CI database; these are not production credentials
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:postgresql://localhost:5432
+      DB_NAME: recom
+      DB_USERNAME: recom
+      DB_PASSWORD: recom
+
+      # CI-only dummy credentials
+      JWT_SECRET: Y2ktb25seS1rZXktbm90LWZvci1wcm9kdWN0aW9uLTM0NTY3ODkwYWJjZGVmZ2hpamts
+      JWT_EXPIRATION: "86400000"
+      JWT_COOKIENAME: testCookie
+
+      S3_BUCKET_NAME: ci-test-bucket
+
+      RAZORPAY_KEY_ID: ci-test-key
+      RAZORPAY_KEY_SECRET: ci-test-secret
+      RAZORPAY_WEBHOOK_SECRET: ci-test-webhook
+
+      STRIPE_SECRET_KEY: ci_test_secret
+      STRIPE_WEBHOOK_SECRET: ci_test_webhook
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Make Maven wrapper executable
+        run: chmod +x mvnw
+
+      - name: Build and run tests
+        run: ./mvnw -B -ntp clean verify
+
+      - name: Prepare deployable JAR
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p dist
+
+          JAR_PATH="$(find target -maxdepth 1 -type f \
+            -name '*.jar' \
+            ! -name '*.original' \
+            ! -name '*-sources.jar' \
+            ! -name '*-javadoc.jar' \
+            | head -n 1)"
+
+          if [ -z "$JAR_PATH" ]; then
+            echo "ERROR: No executable JAR found in target/"
+            exit 1
+          fi
+
+          cp "$JAR_PATH" dist/application.jar
+          echo "Prepared $JAR_PATH"
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sb-ecom-jar
+          path: dist/application.jar
+          if-no-files-found: error
+          retention-days: 2
+
+  deploy:
+    name: Deploy to Elastic Beanstalk
+    needs: build-and-test
+
+    # Deploy only after a successful push to main
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main'
+
+    runs-on: ubuntu-latest
+    environment: production
+
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      AWS_REGION: ap-south-1
+      EB_APPLICATION_NAME: city-mart-ecom
+      EB_ENVIRONMENT_NAME: City-mart-ecom-env
+      EB_ARTIFACT_BUCKET: deploy-jar-files
+
+    steps:
+      - name: Download built JAR
+        uses: actions/download-artifact@v4
+        with:
+          name: sb-ecom-jar
+          path: deploy-bundle
+
+      - name: Prepare Elastic Beanstalk source bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -s deploy-bundle/application.jar
+
+          printf '%s\n' \
+            'web: java -Dspring.profiles.active=prod -jar application.jar' \
+            > deploy-bundle/Procfile
+
+          cd deploy-bundle
+          zip -q ../deployment.zip application.jar Procfile
+          cd ..
+
+          test -s deployment.zip
+
+      - name: Configure AWS credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Upload bundle to S3
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          VERSION_LABEL="sb-ecom-${GITHUB_SHA}"
+          ARTIFACT_KEY="deploys/sb-ecom/${VERSION_LABEL}/deployment.zip"
+
+          aws s3 cp deployment.zip \
+            "s3://${EB_ARTIFACT_BUCKET}/${ARTIFACT_KEY}" \
+            --region "$AWS_REGION"
+
+          echo "ARTIFACT_KEY=$ARTIFACT_KEY" >> "$GITHUB_ENV"
+          echo "VERSION_LABEL=$VERSION_LABEL" >> "$GITHUB_ENV"
+
+      - name: Create Elastic Beanstalk application version
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          aws elasticbeanstalk create-application-version \
+            --application-name "$EB_APPLICATION_NAME" \
+            --version-label "$VERSION_LABEL" \
+            --description "GitHub commit $GITHUB_SHA" \
+            --source-bundle \
+              S3Bucket="$EB_ARTIFACT_BUCKET",S3Key="$ARTIFACT_KEY" \
+            --region "$AWS_REGION"
+
+      - name: Deploy version to environment
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          aws elasticbeanstalk update-environment \
+            --environment-name "$EB_ENVIRONMENT_NAME" \
+            --version-label "$VERSION_LABEL" \
+            --region "$AWS_REGION"
+
+      - name: Wait for deployment to finish
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          aws elasticbeanstalk wait environment-updated \
+            --environment-names "$EB_ENVIRONMENT_NAME" \
+            --region "$AWS_REGION"
+
+      - name: Verify deployment status and health
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          RESULT="$(aws elasticbeanstalk describe-environments \
+            --environment-names "$EB_ENVIRONMENT_NAME" \
+            --region "$AWS_REGION" \
+            --query 'Environments[0].[Status,Health]' \
+            --output text)"
+
+          STATUS="$(echo "$RESULT" | awk '{print $1}')"
+          HEALTH="$(echo "$RESULT" | awk '{print $2}')"
+
+          echo "Environment status: $STATUS"
+          echo "Environment health: $HEALTH"
+
+          if [ "$STATUS" != "Ready" ]; then
+            echo "ERROR: Environment is not Ready."
+            exit 1
+          fi
+
+          if [ "$HEALTH" != "Green" ] && [ "$HEALTH" != "Yellow" ]; then
+            echo "ERROR: Deployment health is not Green or Yellow."
+            exit 1
+          fi
+
+          echo "Deployment completed and health check passed."
