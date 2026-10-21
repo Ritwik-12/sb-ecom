@@ -50,7 +50,24 @@ jobs:
       - name: Run tests
         env:
           SPRING_PROFILES_ACTIVE: prod
-          DB_URL: jdbc:postgresql://localhost:5432/sbecom_test
+          DB_URL:       - name: Run tests
+        env:
+          SPRING_PROFILES_ACTIVE: prod
+          DB_URL: jdbc:postgresql://localhost:5432
+          DB_NAME: sbecom_test
+          DB_USERNAME: test
+          DB_PASSWORD: test
+          JWT_SECRET: ci-only-secret-key-that-is-long-enough-for-hs256-signing
+          JWT_EXPIRATION: 3600000
+          JWT_COOKIENAME: sbecom-ci-jwt
+          RAZORPAY_KEY_ID: rzp_test_ci_dummy
+          RAZORPAY_KEY_SECRET: ci-dummy-secret
+          RAZORPAY_WEBHOOK_SECRET: ci-dummy-webhook-secret
+          S3_BUCKET_NAME: ci-dummy-bucket
+          S3_BUCKET_REGION: ap-south-1
+          STRIPE_SECRET_KEY: sk_test_ci_dummy
+          STRIPE_WEBHOOK_SECRET: whsec_ci_dummy
+        run: ./mvnw -B verify
           DB_NAME: sbecom_test
           DB_USERNAME: test
           DB_PASSWORD: test
