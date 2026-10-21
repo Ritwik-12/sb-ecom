@@ -9,5 +9,4 @@ class SbEcomApplicationTests {
 	@Test
 	void contextLoads() {
 	}
-
 }
