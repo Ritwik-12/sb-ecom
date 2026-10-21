@@ -1,0 +1,21 @@
+name: AWS OIDC check
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Assume the deploy role
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::570864947126:role/<ROLE-NAME>
+          aws-region: ap-south-1
+
+      - name: Confirm identity
+        run: aws sts get-caller-identity
