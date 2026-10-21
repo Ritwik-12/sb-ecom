@@ -90,6 +90,19 @@ jobs:
       - name: Build jar
         run: ./mvnw -B package -DskipTests
 
+      - name: Debug OIDC claims
+        run: |
+          TOKEN=$(curl -sSL -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | jq -r .value)
+          echo "$TOKEN" | cut -d. -f2 | python3 -c '
+          import sys, base64, json
+          s = sys.stdin.read().strip()
+          s += "=" * (-len(s) % 4)
+          claims = json.loads(base64.urlsafe_b64decode(s))
+          print("sub:", claims.get("sub"))
+          print("aud:", claims.get("aud"))
+          '
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
