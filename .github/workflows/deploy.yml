@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: build-and-deploy-docker
+    name: build-and-deploy-jar
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: production
@@ -34,54 +34,37 @@ jobs:
       - name: Run Maven verification
         run: ./mvnw -B -ntp clean verify
 
+      - name: Package Elastic Beanstalk Java SE bundle
+        run: |
+          set -euo pipefail
+          mkdir -p deploy-bundle
+          JAR_PATH=$(find target -maxdepth 1 -type f -name '*.jar' ! -name '*.original' ! -name '*-sources.jar' ! -name '*-javadoc.jar' | head -n 1)
+          test -n "$JAR_PATH"
+          cp "$JAR_PATH" deploy-bundle/application.jar
+          printf '%s\n' 'web: java -Dspring.profiles.active=prod -jar application.jar' > deploy-bundle/Procfile
+          (cd deploy-bundle && zip -q -r ../deployment.zip .)
+
       - name: Configure AWS credentials with OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
 
-      - name: Log in to Amazon ECR
-        id: ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build and push image to ECR
-        id: image
-        env:
-          REGISTRY: ${{ steps.ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          IMAGE_URI="$REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-          docker build --pull -t "$IMAGE_URI" .
-          docker push "$IMAGE_URI"
-          echo "image_uri=$IMAGE_URI" >> "$GITHUB_OUTPUT"
-
-      - name: Create Elastic Beanstalk Docker deployment bundle
-        env:
-          IMAGE_URI: ${{ steps.image.outputs.image_uri }}
-        run: |
-          set -euo pipefail
-          mkdir -p deploy-bundle
-          printf '{"AWSEBDockerrunVersion":"1","Image":{"Name":"%s","Update":"true"},"Ports":[{"ContainerPort":"5000","HostPort":"80"}]}' "$IMAGE_URI" > deploy-bundle/Dockerrun.aws.json
-          (cd deploy-bundle && zip -q ../deployment.zip Dockerrun.aws.json)
-
       - name: Upload bundle and publish application version
         env:
-          AWS_REGION: ${{ vars.AWS_REGION }}
           EB_APPLICATION_NAME: ${{ vars.EB_APPLICATION_NAME }}
           EB_ENVIRONMENT_NAME: ${{ vars.EB_ENVIRONMENT_NAME }}
           EB_ARTIFACT_BUCKET: ${{ vars.EB_ARTIFACT_BUCKET }}
           VERSION_LABEL: sb-ecom-${{ github.sha }}
-          IMAGE_URI: ${{ steps.image.outputs.image_uri }}
         run: |
           set -euo pipefail
-          aws s3 cp deployment.zip "s3://$EB_ARTIFACT_BUCKET/elasticbeanstalk/$EB_APPLICATION_NAME/$VERSION_LABEL/deployment.zip"
+          ARTIFACT_KEY="elasticbeanstalk/$EB_APPLICATION_NAME/$VERSION_LABEL/deployment.zip"
+          aws s3 cp deployment.zip "s3://$EB_ARTIFACT_BUCKET/$ARTIFACT_KEY"
           aws elasticbeanstalk create-application-version \
             --application-name "$EB_APPLICATION_NAME" \
             --version-label "$VERSION_LABEL" \
-            --description "GitHub commit $GITHUB_SHA; image $IMAGE_URI" \
-            --source-bundle S3Bucket="$EB_ARTIFACT_BUCKET",S3Key="elasticbeanstalk/$EB_APPLICATION_NAME/$VERSION_LABEL/deployment.zip"
+            --description "GitHub commit $GITHUB_SHA; Java 21 JAR deployment" \
+            --source-bundle S3Bucket="$EB_ARTIFACT_BUCKET",S3Key="$ARTIFACT_KEY"
           aws elasticbeanstalk update-environment \
             --environment-name "$EB_ENVIRONMENT_NAME" \
             --version-label "$VERSION_LABEL"
